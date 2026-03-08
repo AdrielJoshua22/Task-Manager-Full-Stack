@@ -1,0 +1,121 @@
+:root {
+  --bg-color: #09090b;
+  --card-bg: #18181b;
+  --accent: #6366f1;
+  --text-main: #fafafa;
+  --text-dim: #a1a1aa;
+  --border: #27272a;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  font-family: 'Inter', -apple-system, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 10vh;
+  min-height: 100vh;
+}
+
+.main-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.app-header h1 {
+  font-size: 20px;
+  margin: 0;
+  font-weight: 600;
+}
+
+.input-box {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+input {
+  flex: 1;
+  background: #09090b;
+  border: 1px solid var(--border);
+  color: white;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 15px;
+  outline: none;
+}
+
+input:focus { border-color: var(--accent); }
+
+.add-btn {
+  background: var(--accent);
+  border: none;
+  color: white;
+  padding: 0 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.task-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #202023;
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  border: 1px solid transparent;
+  transition: 0.2s;
+}
+
+.task-card:hover { border-color: #3f3f46; }
+
+.task-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  flex: 1;
+}
+
+.check-icon { color: #3f3f46; transition: 0.2s; }
+.check-icon.active { color: #10b981; }
+
+.task-text { font-size: 15px; }
+.completed .task-text { text-decoration: line-through; color: var(--text-dim); }
+
+.bin-btn {
+  background: none;
+  border: none;
+  color: #71717a;
+  cursor: pointer;
+  padding: 4px;
+  transition: 0.2s;
+}
+
+.bin-btn:hover { color: #ef4444; }
+
+.empty-text { text-align: center; color: var(--text-dim); font-size: 14px; margin-top: 20px; }
+
+.stats {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-dim);
+  text-align: right;
+}
