@@ -61,7 +61,6 @@ function App() {
               tasks.map(task => (
                 <div
                   key={task.id}
-                  /* Agregamos una clase dinámica para el CSS */
                   className={`task-card ${task.completed ? 'completed' : ''}`}
                   style={{ opacity: task.completed ? 0.7 : 1, transition: '0.3s' }}
                 >
@@ -70,7 +69,6 @@ function App() {
                       <CheckCircle className="check-icon active" color="#10b981" /> :
                       <Circle className="check-icon" color="#6366f1" />
                     }
-                    {/* Aquí aplicamos el tachado visual */}
                     <span className="task-text" style={{
                       textDecoration: task.completed ? 'line-through' : 'none',
                       color: task.completed ? '#94a3b8' : '#f8fafc'
