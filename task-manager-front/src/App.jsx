@@ -1,148 +1,81 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
-import FullCalendar from '@fullcalendar/react';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import esLocale from '@fullcalendar/core/locales/es';
-import { Trash2, Plus, ListChecks, X, Sun, Moon } from 'lucide-react'; // Sumamos Sun y Moon
-
-const API_URL = "http://localhost:8080/api/tasks";
+import './App.css';
 
 function App() {
-  const [tasks, setTasks] = useState([]);
-  const [title, setTitle] = useState('');
-  const [startDate, setStartDate] = useState("2026-03-08T09:00");
+  const [currentUser, setCurrentUser] = useState(null);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState(null);
-  const [note, setNote] = useState('');
-
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    return localStorage.getItem('theme') === 'dark';
-  });
-
-  useEffect(() => {
-    if (isDarkMode) {
-      document.body.classList.add('dark-mode');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.body.classList.remove('dark-mode');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [isDarkMode]);
-
-  const fetchTasks = async () => {
-    try {
-      const res = await axios.get(API_URL);
-      const mapped = res.data.map(t => ({
-        id: String(t.id),
-        title: t.title,
-        start: t.startDate,
-        backgroundColor: 'var(--accent)',
-        borderColor: 'transparent',
-        extendedProps: { ...t }
-      }));
-      setTasks(mapped);
-    } catch (e) { console.error("Error cargando tareas", e); }
-  };
-
-  useEffect(() => { fetchTasks(); }, []);
-
-  const addTask = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (!title.trim()) return;
     try {
-      await axios.post(API_URL, { title, startDate, completed: false, description: "" });
-      setTitle('');
-      fetchTasks();
-    } catch (e) { console.error("Error al añadir", e); }
+      const response = await axios.post('http://localhost:8080/api/auth/login', {
+        username: username,
+        password: password
+      });
+      setCurrentUser(response.data.username);
+      setError('');
+    } catch (err) {
+      setError('Credenciales incorrectas. Intenta de nuevo.');
+    }
   };
 
-  const deleteTask = async (id) => {
-    try {
-      await axios.delete(`${API_URL}/${id}`);
-      fetchTasks();
-    } catch (e) { console.error("Error al borrar", e); }
-  };
-
-  const openModal = (task) => {
-    setSelectedTask(task.extendedProps);
-    setNote(task.extendedProps.description || "");
-    setIsModalOpen(true);
-  };
-
-  const saveNote = async () => {
-    try {
-      await axios.put(`${API_URL}/${selectedTask.id}`, { ...selectedTask, description: note });
-      setIsModalOpen(false);
-      fetchTasks();
-    } catch (e) { console.error("Error al guardar", e); }
-  };
+  if (!currentUser) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f4f4f9' }}>
+        <form onSubmit={handleLogin} style={{ padding: '2rem', background: 'white', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column', gap: '1rem', width: '300px' }}>
+          <h2 style={{ textAlign: 'center', margin: 0 }}>Iniciar Sesión</h2>
+          {error && <p style={{ color: 'red', fontSize: '0.8rem', textAlign: 'center' }}>{error}</p>}
+          <input
+            type="text"
+            placeholder="Usuario (ej. luffy_dev)"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
+            required
+          />
+          <input
+            type="password"
+            placeholder="Contraseña"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
+            required
+          />
+          <button type="submit" style={{ padding: '0.5rem', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+            Entrar
+          </button>
+        </form>
+      </div>
+    );
+  }
 
   return (
-    <>
-      <button
-        className="theme-toggle"
-        onClick={() => setIsDarkMode(!isDarkMode)}
-        title="Cambiar tema"
-      >
-        {isDarkMode ? <Sun size={24} color="#fafafa" /> : <Moon size={24} color="#2c3327" />}
-      </button>
-
-      <div className="dashboard-container">
-        <div className="dashboard-grid">
-          <aside className="main-card">
-            <header className="app-header">
-              <ListChecks className="header-icon" size={28} />
-              <h1>Mis Tareas</h1>
-            </header>
-
-            <form onSubmit={addTask} className="advanced-form">
-              <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="¿Qué hay que hacer?" />
-              <input type="datetime-local" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-              <button type="submit" className="add-btn-large"><Plus size={18}/> Añadir Tarea</button>
-            </form>
-
-            <div className="task-container">
-              {tasks.map(t => (
-                <div key={t.id} className="task-card" onDoubleClick={() => openModal(t)}>
-                  <div className="task-info">
-                    <span className="task-text">{t.title}</span>
-                  </div>
-                  <button onClick={(e) => { e.stopPropagation(); deleteTask(t.id); }} className="bin-btn">
-                    <Trash2 size={18}/>
-                  </button>
-                </div>
-              ))}
-            </div>
-          </aside>
-
-          <main className="calendar-card-modern">
-            <FullCalendar
-              key={tasks.length}
-              plugins={[dayGridPlugin]}
-              initialView="dayGridMonth"
-              locale={esLocale}
-              events={tasks}
-              height="100%"
-              headerToolbar={{ left: 'prev,next today', center: 'title', right: '' }}
-            />
-          </main>
+    <div style={{ fontFamily: 'sans-serif' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 2rem', backgroundColor: '#333', color: 'white' }}>
+        <h1 style={{ margin: 0 }}>Task Manager</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <span>Hola, <strong>{currentUser}</strong></span>
+          <button
+            onClick={() => setCurrentUser(null)}
+            style={{ padding: '0.5rem 1rem', cursor: 'pointer', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '4px' }}
+          >
+            Salir
+          </button>
         </div>
+      </header>
 
-        {isModalOpen && (
-          <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
-            <div className="modal-content" onClick={e => e.stopPropagation()}>
-              <header className="modal-header">
-                <h3>Notas: {selectedTask?.title}</h3>
-                <button className="bin-btn" onClick={() => setIsModalOpen(false)}><X size={20} /></button>
-              </header>
-              <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Escribe los detalles..." autoFocus />
-              <button className="add-btn-large" style={{ width: '100%' }} onClick={saveNote}>Guardar Nota</button>
-            </div>
-          </div>
-        )}
-      </div>
-    </>
+      <main style={{ padding: '2rem' }}>
+        <h2>Bienvenido a tu panel de control</h2>
+        <p>Tu sesión se ha iniciado correctamente.</p>
+
+        <div style={{ marginTop: '2rem', padding: '2rem', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px dashed #ccc', textAlign: 'center' }}>
+          <p style={{ color: '#666' }}>Aquí construiremos tu formulario para crear tareas y la lista para verlas.</p>
+        </div>
+      </main>
+    </div>
   );
 }
 
