@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import TaskDetailsModal from './TaskDetailsModal';
 
 const Dashboard = ({ currentUser, onLogout }) => {
   const getCurrentDateTime = () => {
@@ -11,6 +12,7 @@ const Dashboard = ({ currentUser, onLogout }) => {
   const [title, setTitle] = useState('');
   const [startDate, setStartDate] = useState(getCurrentDateTime());
   const [tasks, setTasks] = useState([]);
+  const [selectedTask, setSelectedTask] = useState(null);
 
   const fetchTasks = async () => {
     try {
@@ -39,6 +41,7 @@ const Dashboard = ({ currentUser, onLogout }) => {
     try {
       await axios.post(`http://localhost:8080/api/tasks/${currentUser}`, {
         title: title,
+        description: "",
         startDate: startDate || null,
         completed: false
       });
@@ -71,6 +74,16 @@ const Dashboard = ({ currentUser, onLogout }) => {
     }
   };
 
+  const handleSaveTaskDetails = async (updatedTask) => {
+    try {
+      await axios.put(`http://localhost:8080/api/tasks/${updatedTask.id}`, updatedTask);
+      setSelectedTask(null);
+      fetchTasks();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const [currentDate, setCurrentDate] = useState(new Date(2026, 2, 1));
 
   const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
@@ -81,23 +94,15 @@ const Dashboard = ({ currentUser, onLogout }) => {
 
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth();
-
   const daysInMonth = getDaysInMonth(currentYear, currentMonth);
   const startingDay = getFirstDayOfMonth(currentYear, currentMonth);
-
   const totalCells = Math.ceil((daysInMonth + startingDay) / 7) * 7;
 
-  const nextMonth = () => {
-    setCurrentDate(new Date(currentYear, currentMonth + 1, 1));
-  };
-
-  const prevMonth = () => {
-    setCurrentDate(new Date(currentYear, currentMonth - 1, 1));
-  };
+  const nextMonth = () => setCurrentDate(new Date(currentYear, currentMonth + 1, 1));
+  const prevMonth = () => setCurrentDate(new Date(currentYear, currentMonth - 1, 1));
 
   const getTasksByDateString = (dayNum) => {
     const targetDate = new Date(currentYear, currentMonth, dayNum).toISOString().split('T')[0];
-
     return tasks.filter(task => {
       if (!task.startDate) return false;
       const taskDate = task.startDate.split('T')[0];
@@ -132,7 +137,7 @@ const Dashboard = ({ currentUser, onLogout }) => {
             {tasks.length === 0 ? <p style={{color: '#999', textAlign: 'center'}}>No hay tareas aún</p> :
               tasks.map(task => (
                 <div key={task.id} style={{ padding: '12px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div onClick={() => handleToggleComplete(task)} style={{ cursor: 'pointer', flex: 1 }}>
+                  <div onClick={() => setSelectedTask(task)} style={{ cursor: 'pointer', flex: 1 }}>
                     <span style={{ fontWeight: '500', textDecoration: task.completed ? 'line-through' : 'none', color: task.completed ? '#aaa' : '#333' }}>{task.title}</span>
                     <br />
                     <small style={{ color: '#888' }}>{task.startDate ? new Date(task.startDate).toLocaleDateString() : 'Sin fecha'}</small>
@@ -145,7 +150,6 @@ const Dashboard = ({ currentUser, onLogout }) => {
         </aside>
 
         <section style={{ flex: 1, backgroundColor: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' }}>
-
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
              <button onClick={prevMonth} style={{ cursor: 'pointer', padding: '8px 16px', backgroundColor: '#f0f0f0', border: '1px solid #ccc', borderRadius: '4px' }}>&lt; Anterior</button>
              <h2 style={{ color: '#333', margin: 0 }}>{monthNames[currentMonth]} de {currentYear}</h2>
@@ -165,23 +169,11 @@ const Dashboard = ({ currentUser, onLogout }) => {
               return (
                 <div key={i} style={{ minHeight: '100px', borderRight: '1px solid #eee', borderBottom: '1px solid #eee', padding: '5px', backgroundColor: isCurrentMonth ? 'white' : '#f9f9f9' }}>
                   <div style={{ textAlign: 'right', color: isCurrentMonth ? '#333' : 'transparent', marginBottom: '5px', fontSize: '0.9rem', fontWeight: 'bold' }}>{isCurrentMonth ? dayNum : "."}</div>
-
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     {tasksOnDay.map(t => (
-                      <div key={t.id} style={{
-                        fontSize: '0.65rem',
-                        backgroundColor: t.completed ? '#e8f5e9' : '#f0f4c3',
-                        padding: '4px',
-                        borderRadius: '3px',
-                        borderLeft: `3px solid ${t.completed ? '#4caf50' : '#8bc34a'}`,
-                        textDecoration: t.completed ? 'line-through' : 'none',
-                        color: '#333',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        cursor: 'pointer'
-                      }}
-                      title={t.title}>
+                      <div key={t.id} onClick={() => setSelectedTask(t)} style={{
+                        fontSize: '0.65rem', backgroundColor: t.completed ? '#e8f5e9' : '#f0f4c3', padding: '4px', borderRadius: '3px', borderLeft: `3px solid ${t.completed ? '#4caf50' : '#8bc34a'}`, textDecoration: t.completed ? 'line-through' : 'none', color: '#333', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'pointer'
+                      }} title={t.title}>
                         {t.title}
                       </div>
                     ))}
@@ -192,6 +184,12 @@ const Dashboard = ({ currentUser, onLogout }) => {
           </div>
         </section>
       </main>
+
+      <TaskDetailsModal
+        task={selectedTask}
+        onClose={() => setSelectedTask(null)}
+        onSave={handleSaveTaskDetails}
+      />
     </div>
   );
 };
