@@ -71,13 +71,41 @@ const Dashboard = ({ currentUser, onLogout }) => {
     }
   };
 
-  const getTasksByDay = (day) => {
+  const [currentDate, setCurrentDate] = useState(new Date(2026, 2, 1));
+
+  const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
+  const getFirstDayOfMonth = (year, month) => {
+    let day = new Date(year, month, 1).getDay();
+    return day === 0 ? 6 : day - 1;
+  };
+
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth();
+
+  const daysInMonth = getDaysInMonth(currentYear, currentMonth);
+  const startingDay = getFirstDayOfMonth(currentYear, currentMonth);
+
+  const totalCells = Math.ceil((daysInMonth + startingDay) / 7) * 7;
+
+  const nextMonth = () => {
+    setCurrentDate(new Date(currentYear, currentMonth + 1, 1));
+  };
+
+  const prevMonth = () => {
+    setCurrentDate(new Date(currentYear, currentMonth - 1, 1));
+  };
+
+  const getTasksByDateString = (dayNum) => {
+    const targetDate = new Date(currentYear, currentMonth, dayNum).toISOString().split('T')[0];
+
     return tasks.filter(task => {
       if (!task.startDate) return false;
-      const date = new Date(task.startDate);
-      return date.getUTCDate() === day;
+      const taskDate = task.startDate.split('T')[0];
+      return taskDate === targetDate;
     });
   };
+
+  const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
   return (
     <div style={{ fontFamily: 'sans-serif', backgroundColor: '#f4f3ec', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -91,7 +119,7 @@ const Dashboard = ({ currentUser, onLogout }) => {
 
       <main style={{ display: 'flex', gap: '20px', padding: '20px', flex: 1 }}>
         <aside style={{ width: '320px', backgroundColor: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' }}>
-          <h2 style={{ color: '#333', fontSize: '1.4rem', margin: 0 }}>✓= Mis Tareas</h2>
+          <h2 style={{ color: '#333', fontSize: '1.4rem', margin: 0 }}>✓ Mis Tareas</h2>
           <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '20px 0' }} />
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '30px' }}>
@@ -116,38 +144,48 @@ const Dashboard = ({ currentUser, onLogout }) => {
           </div>
         </aside>
 
-        <section style={{ flex: 1, backgroundColor: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
-          <h2 style={{ textAlign: 'center', color: '#333', marginBottom: '20px' }}>Marzo de 2026</h2>
+        <section style={{ flex: 1, backgroundColor: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' }}>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderTop: '1px solid #eee', borderLeft: '1px solid #eee' }}>
-            {['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'].map(day => (
-              <div key={day} style={{ padding: '10px', fontWeight: 'bold', textAlign: 'center', borderRight: '1px solid #eee', borderBottom: '1px solid #eee', backgroundColor: '#fafafa' }}>{day}</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+             <button onClick={prevMonth} style={{ cursor: 'pointer', padding: '8px 16px', backgroundColor: '#f0f0f0', border: '1px solid #ccc', borderRadius: '4px' }}>&lt; Anterior</button>
+             <h2 style={{ color: '#333', margin: 0 }}>{monthNames[currentMonth]} de {currentYear}</h2>
+             <button onClick={nextMonth} style={{ cursor: 'pointer', padding: '8px 16px', backgroundColor: '#f0f0f0', border: '1px solid #ccc', borderRadius: '4px' }}>Siguiente &gt;</button>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderTop: '1px solid #eee', borderLeft: '1px solid #eee', flex: 1 }}>
+            {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(day => (
+              <div key={day} style={{ padding: '10px', fontWeight: 'bold', textAlign: 'center', borderRight: '1px solid #eee', borderBottom: '1px solid #eee', backgroundColor: '#fafafa', height: '40px' }}>{day}</div>
             ))}
-            {Array.from({ length: 35 }).map((_, i) => {
-              const dayNum = i - 4;
-              const isCurrentMonth = dayNum > 0 && dayNum <= 31;
-              const tasksOnDay = isCurrentMonth ? getTasksByDay(dayNum) : [];
+
+            {Array.from({ length: totalCells }).map((_, i) => {
+              const dayNum = i - startingDay + 1;
+              const isCurrentMonth = dayNum > 0 && dayNum <= daysInMonth;
+              const tasksOnDay = isCurrentMonth ? getTasksByDateString(dayNum) : [];
 
               return (
-                <div key={i} style={{ minHeight: '100px', borderRight: '1px solid #eee', borderBottom: '1px solid #eee', padding: '5px' }}>
-                  <div style={{ textAlign: 'right', color: isCurrentMonth ? '#333' : '#ccc', marginBottom: '5px', fontSize: '0.9rem' }}>{isCurrentMonth ? dayNum : ""}</div>
-                  {tasksOnDay.map(t => (
-                    <div key={t.id} style={{
-                      fontSize: '0.65rem',
-                      backgroundColor: t.completed ? '#e8f5e9' : '#f0f4c3',
-                      padding: '2px 4px',
-                      marginBottom: '2px',
-                      borderRadius: '3px',
-                      borderLeft: `3px solid ${t.completed ? '#4caf50' : '#8bc34a'}`,
-                      textDecoration: t.completed ? 'line-through' : 'none',
-                      color: '#333',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis'
-                    }}>
-                      {t.title}
-                    </div>
-                  ))}
+                <div key={i} style={{ minHeight: '100px', borderRight: '1px solid #eee', borderBottom: '1px solid #eee', padding: '5px', backgroundColor: isCurrentMonth ? 'white' : '#f9f9f9' }}>
+                  <div style={{ textAlign: 'right', color: isCurrentMonth ? '#333' : 'transparent', marginBottom: '5px', fontSize: '0.9rem', fontWeight: 'bold' }}>{isCurrentMonth ? dayNum : "."}</div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    {tasksOnDay.map(t => (
+                      <div key={t.id} style={{
+                        fontSize: '0.65rem',
+                        backgroundColor: t.completed ? '#e8f5e9' : '#f0f4c3',
+                        padding: '4px',
+                        borderRadius: '3px',
+                        borderLeft: `3px solid ${t.completed ? '#4caf50' : '#8bc34a'}`,
+                        textDecoration: t.completed ? 'line-through' : 'none',
+                        color: '#333',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        cursor: 'pointer'
+                      }}
+                      title={t.title}>
+                        {t.title}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               );
             })}
