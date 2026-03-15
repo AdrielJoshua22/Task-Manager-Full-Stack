@@ -11,9 +11,11 @@
   will-change: filter;
   transition: filter 300ms;
 }
+
 .logo:hover {
   filter: drop-shadow(0 0 2em #646cffaa);
 }
+
 .logo.react:hover {
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
@@ -39,4 +41,52 @@
 
 .read-the-docs {
   color: #888;
+}
+
+.mobile-toggle-btn {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .dashboard-main-container {
+    flex-direction: column !important;
+    padding: 12px !important;
+  }
+
+  .dashboard-main-container.show-tasks .calendar-section {
+    display: none !important;
+  }
+
+  .dashboard-main-container.show-calendar .dashboard-sidebar-container {
+    display: none !important;
+  }
+
+  .dashboard-sidebar-container {
+    width: 100% !important;
+    min-height: auto !important;
+    flex: none !important;
+  }
+
+  .mobile-toggle-btn {
+    display: block !important;
+    width: 100%;
+    padding: 14px;
+    background-color: #2c3e50;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 20px;
+    font-size: 1rem;
+    box-shadow: 0 4px 10px rgba(44, 62, 80, 0.2);
+  }
+
+  .calendar-section {
+    overflow-x: auto !important;
+  }
+
+  .calendar-grid {
+    min-width: 600px;
+  }
 }
