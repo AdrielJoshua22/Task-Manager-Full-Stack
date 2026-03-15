@@ -29,25 +29,27 @@ body {
   background-color: var(--bg-color);
   color: var(--text-main);
   font-family: 'Inter', -apple-system, sans-serif;
+  overflow-x: hidden;
   overflow-y: auto;
   transition: background-color 0.4s ease, color 0.4s ease;
+  line-height: 1.5;
 }
 
 .theme-toggle {
   position: fixed;
-  bottom: 25px;
-  right: 25px;
+  bottom: 30px;
+  right: 30px;
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 50%;
-  width: 55px;
-  height: 55px;
+  width: 60px;
+  height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-  z-index: 9999;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
   transition: all 0.3s ease;
 }
 
@@ -57,7 +59,7 @@ body {
 }
 
 .dashboard-container {
-  height: 100vh;
+  min-height: 100vh;
   padding: 20px;
   box-sizing: border-box;
 }
@@ -66,7 +68,6 @@ body {
   display: grid;
   grid-template-columns: 380px 1fr;
   gap: 20px;
-  height: 100%;
   max-width: 1600px;
   margin: 0 auto;
 }
@@ -74,19 +75,18 @@ body {
 .main-card, .calendar-card-modern {
   background: var(--card-bg);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 25px;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  box-shadow: 2px 4px 12px rgba(0, 0, 0, 0.04);
-  transition: background-color 0.4s ease, border-color 0.4s ease;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: all 0.4s ease;
 }
 
 .app-header {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   margin-bottom: 25px;
   border-bottom: 2px solid var(--border);
   padding-bottom: 15px;
@@ -96,7 +96,6 @@ body {
   margin: 0;
   font-size: 1.5rem;
   font-weight: 600;
-  color: var(--text-main);
 }
 
 .header-icon {
@@ -115,15 +114,15 @@ input {
   border: none;
   border-bottom: 2px solid var(--border);
   color: var(--text-main);
-  padding: 10px 5px;
+  padding: 12px 8px;
   font-size: 1rem;
   outline: none;
-  transition: border-color 0.2s, background-color 0.4s ease;
+  transition: all 0.3s ease;
 }
 
 body.dark-mode input {
-  border-radius: 6px;
   border: 1px solid var(--border);
+  border-radius: 8px;
   padding: 12px;
 }
 
@@ -138,29 +137,30 @@ input::placeholder {
 
 .add-btn-large {
   background: var(--accent);
-  color: #fafafa;
+  color: #ffffff;
   border: none;
-  padding: 12px;
-  border-radius: 6px;
+  padding: 14px;
+  border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 8px;
-  transition: 0.2s;
   text-transform: uppercase;
-  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+  transition: 0.3s;
 }
 
 .add-btn-large:hover {
   background: var(--accent-hover);
+  transform: translateY(-1px);
 }
 
 .task-container {
   overflow-y: auto;
-  flex: 1;
-  padding-right: 5px;
+  max-height: 60vh;
+  padding-right: 8px;
 }
 
 .task-container::-webkit-scrollbar {
@@ -176,19 +176,18 @@ input::placeholder {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 15px;
+  padding: 15px;
   background: var(--card-bg);
   border: 1px solid var(--border);
-  border-left: 5px solid var(--accent);
-  border-radius: 6px;
-  margin-bottom: 10px;
-  cursor: pointer;
-  transition: transform 0.1s, background-color 0.4s ease;
+  border-left: 6px solid var(--accent);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  transition: 0.2s ease;
 }
 
 .task-card:hover {
-  transform: translateX(2px);
-  border-color: var(--text-muted);
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
 .task-info {
@@ -220,7 +219,7 @@ input::placeholder {
 }
 
 .fc-toolbar-title {
-  font-size: 1.3rem !important;
+  font-size: 1.2rem !important;
   text-transform: capitalize;
   color: var(--text-main);
   font-weight: 600 !important;
@@ -274,7 +273,7 @@ input::placeholder {
 .modal-content {
   background: var(--card-bg);
   padding: 25px;
-  border-radius: 8px;
+  border-radius: 12px;
   border: 1px solid var(--border);
   width: 90%;
   max-width: 450px;
@@ -303,7 +302,7 @@ input::placeholder {
   background: var(--input-bg);
   color: var(--text-main);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 12px;
   margin-bottom: 15px;
   resize: none;
@@ -318,32 +317,36 @@ input::placeholder {
 }
 
 @media (max-width: 768px) {
-  body {
-    overflow-y: auto !important;
+  .dashboard-container {
+    padding: 10px;
+    height: auto;
   }
 
   .dashboard-grid {
     grid-template-columns: 1fr;
-    height: auto;
-  }
-
-  .dashboard-container {
-    height: auto;
-    padding: 10px;
+    gap: 15px;
   }
 
   .main-card, .calendar-card-modern {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin: 0 auto;
+    padding: 15px;
     height: auto;
     overflow: visible;
-    padding: 15px;
-  }
-
-  .fc-toolbar-title {
-    font-size: 1rem !important;
   }
 
   .task-container {
     max-height: 400px;
-    overflow-y: auto;
+  }
+
+  .fc-toolbar {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .fc-toolbar-title {
+    font-size: 1rem !important;
   }
 }
