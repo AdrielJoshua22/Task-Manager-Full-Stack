@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8080/api/auth';
+const API_URL = 'https://task-manager-full-stack-production.up.railway.app/api/auth/login';
 
 export const login = async (username, password) => {
   const response = await axios.post(`${API_URL}/login`, { username, password });
