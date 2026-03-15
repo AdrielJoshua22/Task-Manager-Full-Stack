@@ -14,16 +14,11 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/tasks")
-// Cambiamos el origin específico por "*" para que Vercel pueda entrar sin problemas
-@CrossOrigin(origins = "*", allowedHeaders = "*", methods = {
-        RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE
-})
 public class TaskController {
 
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
 
-    // Refactor: Inyección por constructor (más seguro y fácil de testear)
     public TaskController(TaskRepository taskRepository, UserRepository userRepository) {
         this.taskRepository = taskRepository;
         this.userRepository = userRepository;
@@ -51,13 +46,12 @@ public class TaskController {
         return userRepository.findByUsername(username)
                 .map(user -> {
                     task.setUser(user);
-                    // Lógica de frecuencia por defecto optimizada
                     if (task.getFrecuencia() == null || task.getFrecuencia().isBlank()) {
                         task.setFrecuencia("NUNCA");
                     }
                     return ResponseEntity.status(HttpStatus.CREATED).body(taskRepository.save(task));
                 })
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al crear tarea: usuario inexistente"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Usuario inexistente"));
     }
 
     @PutMapping("/{id}")
@@ -78,7 +72,7 @@ public class TaskController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
         if (!taskRepository.existsById(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se puede eliminar: tarea no existe");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Tarea no existe");
         }
         taskRepository.deleteById(id);
         return ResponseEntity.noContent().build();

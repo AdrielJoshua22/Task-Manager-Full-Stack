@@ -1,6 +1,5 @@
 package com.example.taskmanagerapi.controller;
-import org.springframework.web.bind.annotation.RequestMethod;
-import com.example.taskmanagerapi.domain.User;
+
 import com.example.taskmanagerapi.repository.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,7 +11,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*", allowedHeaders = "*", methods = {RequestMethod.POST, RequestMethod.OPTIONS})
 public class AuthController {
 
     private final UserRepository userRepository;
