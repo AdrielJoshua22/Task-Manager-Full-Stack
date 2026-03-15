@@ -1,242 +1,261 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import TaskDetailsModal from './TaskDetailsModal';
 import DailyView from './DailyView';
 import Footer from './Footer';
 
+// 1. Configuración de instancia de Axios para no repetir la URL
+const api = axios.create({
+  baseURL: 'https://task-manager-full-stack-production.up.railway.app/api/tasks'
+});
+
 const Dashboard = ({ currentUser, onLogout }) => {
+  // --- Estados ---
+  const [taskForm, setTaskForm] = useState({
+    title: '',
+    startDate: '',
+    frecuencia: 'NUNCA'
+  });
+
+  const [tasks, setTasks] = useState([]);
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [viewMode, setViewMode] = useState('month');
+  const [selectedDateView, setSelectedDateView] = useState(null);
+  const [showMobileCalendar, setShowMobileCalendar] = useState(false);
+  const [currentDate, setCurrentDate] = useState(new Date(2026, 2, 1));
+
+  // --- Helpers ---
   const getCurrentDateTime = () => {
     const now = new Date();
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
     return now.toISOString().slice(0, 16);
   };
 
-  const [title, setTitle] = useState('');
-  const [startDate, setStartDate] = useState(getCurrentDateTime());
-  const [frecuencia, setFrecuencia] = useState('NUNCA');
-  const [tasks, setTasks] = useState([]);
-  const [selectedTask, setSelectedTask] = useState(null);
-  const [viewMode, setViewMode] = useState('month');
-  const [selectedDateView, setSelectedDateView] = useState(null);
-  const [showMobileCalendar, setShowMobileCalendar] = useState(false);
+  // Inicializar fecha del formulario
+  useEffect(() => {
+    setTaskForm(prev => ({ ...prev, startDate: getCurrentDateTime() }));
+  }, []);
 
-  const fetchTasks = async () => {
+  // --- Operaciones API ---
+  const fetchTasks = useCallback(async () => {
     try {
-      const response = await axios.get(`http://localhost:8080/api/tasks/user/${currentUser}`);
-      if (Array.isArray(response.data)) setTasks(response.data);
-      else setTasks([]);
-    } catch (error) { setTasks([]); }
-  };
+      const { data } = await api.get(`/user/${currentUser}`);
+      setTasks(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Error cargando tareas:", error);
+      setTasks([]);
+    }
+  }, [currentUser]);
 
-  useEffect(() => { fetchTasks(); }, [currentUser]);
-
-  const handleLogout = () => {
-    localStorage.removeItem('usuarioTaskApp');
-    onLogout();
-  };
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
 
   const handleAddTask = async () => {
-    if (!title) return alert("Escribe un título");
+    if (!taskForm.title.trim()) return alert("Escribe un título");
+
     try {
-      await axios.post(`http://localhost:8080/api/tasks/${currentUser}`, {
-        title: title,
+      await api.post(`/${currentUser}`, {
+        ...taskForm,
         description: "",
-        startDate: startDate || null,
-        completed: false,
-        frecuencia: frecuencia
+        completed: false
       });
-      setTitle('');
-      setStartDate(getCurrentDateTime());
-      setFrecuencia('NUNCA');
+      setTaskForm({ title: '', startDate: getCurrentDateTime(), frecuencia: 'NUNCA' });
       fetchTasks();
-    } catch (error) { console.error(error); }
+    } catch (error) {
+      console.error("Error al añadir:", error);
+    }
   };
 
   const handleDeleteTask = async (id) => {
-    try { await axios.delete(`http://localhost:8080/api/tasks/${id}`); fetchTasks(); }
-    catch (error) { console.error(error); }
+    if (!window.confirm("¿Seguro que quieres borrar esta tarea?")) return;
+    try {
+      await api.delete(`/${id}`);
+      fetchTasks();
+    } catch (error) {
+      console.error("Error al borrar:", error);
+    }
   };
 
   const handleSaveTaskDetails = async (updatedTask) => {
     try {
-      await axios.put(`http://localhost:8080/api/tasks/${updatedTask.id}`, updatedTask);
-      setSelectedTask(null); fetchTasks();
-    } catch (error) { console.error(error); }
+      await api.put(`/${updatedTask.id}`, updatedTask);
+      setSelectedTask(null);
+      fetchTasks();
+    } catch (error) {
+      console.error("Error al actualizar:", error);
+    }
   };
 
-  const [currentDate, setCurrentDate] = useState(new Date(2026, 2, 1));
-
-  const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
-  const getFirstDayOfMonth = (year, month) => {
-    let day = new Date(year, month, 1).getDay();
-    return day === 0 ? 6 : day - 1;
-  };
-
+  // --- Lógica de Calendario ---
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth();
-  const daysInMonth = getDaysInMonth(currentYear, currentMonth);
-  const startingDay = getFirstDayOfMonth(currentYear, currentMonth);
-  const totalCells = Math.ceil((daysInMonth + startingDay) / 7) * 7;
-
-  const nextMonth = () => setCurrentDate(new Date(currentYear, currentMonth + 1, 1));
-  const prevMonth = () => setCurrentDate(new Date(currentYear, currentMonth - 1, 1));
-
-  const getTasksByDateString = (dayNum) => {
-      const cellDate = new Date(currentYear, currentMonth, dayNum);
-
-      return tasks.filter(task => {
-        if (!task.startDate) return false;
-
-        const taskDate = new Date(task.startDate);
-        const normalizedTaskDate = new Date(taskDate.getFullYear(), taskDate.getMonth(), taskDate.getDate());
-
-        if (cellDate < normalizedTaskDate) return false;
-
-        const freq = task.frecuencia || 'NUNCA';
-
-        if (freq === 'NUNCA') {
-          return cellDate.getTime() === normalizedTaskDate.getTime();
-        }
-
-        if (freq === 'DIARIA') {
-          return true;
-        }
-
-        if (freq === 'SEMANAL') {
-          return taskDate.getDay() === cellDate.getDay();
-        }
-
-        if (freq === 'MENSUAL') {
-          return taskDate.getDate() === cellDate.getDate();
-        }
-
-        return false;
-      });
-  };
-
   const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
-  const handleDayClick = (dayNum) => {
-    const clickedDate = new Date(currentYear, currentMonth, dayNum);
-    setSelectedDateView(clickedDate);
-    setViewMode('day');
+  const getTasksByDateString = (dayNum) => {
+    const cellDate = new Date(currentYear, currentMonth, dayNum);
+
+    return tasks.filter(task => {
+      if (!task.startDate) return false;
+      const taskDate = new Date(task.startDate);
+      const normalizedTaskDate = new Date(taskDate.getFullYear(), taskDate.getMonth(), taskDate.getDate());
+
+      if (cellDate < normalizedTaskDate) return false;
+
+      const freq = task.frecuencia || 'NUNCA';
+      if (freq === 'NUNCA') return cellDate.getTime() === normalizedTaskDate.getTime();
+      if (freq === 'DIARIA') return true;
+      if (freq === 'SEMANAL') return taskDate.getDay() === cellDate.getDay();
+      if (freq === 'MENSUAL') return taskDate.getDate() === cellDate.getDate();
+      return false;
+    });
   };
 
+  // --- Renderizado de UI ---
   return (
-    <div style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif", backgroundColor: '#f4f3ec', position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div className="dashboard-wrapper" style={{
+      fontFamily: "'Inter', sans-serif", backgroundColor: '#f4f3ec',
+      position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden'
+    }}>
 
-      <header style={{ display: 'flex', justifyContent: 'space-between', padding: '0 2rem', backgroundColor: '#2c3e50', color: 'white', height: '70px', boxSizing: 'border-box', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', zIndex: 10, flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <h1 style={{ margin: 0, fontSize: '1.3rem', fontWeight: '600', letterSpacing: '0.5px' }}>Task Manager</h1>
-        </div>
+      {/* Header */}
+      <header style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 2rem',
+        backgroundColor: '#2c3e50', color: 'white', height: '70px', flexShrink: 0
+      }}>
+        <h1 style={{ fontSize: '1.3rem', fontWeight: '600' }}>Task Manager</h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-          <span style={{ fontSize: '0.95rem', color: '#e2e8f0' }}>Hola, <strong style={{ color: 'white', fontWeight: '600' }}>{currentUser}</strong></span>
-          <button onClick={handleLogout} style={{ padding: '0.5rem 1rem', cursor: 'pointer', backgroundColor: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', fontWeight: '500', transition: 'all 0.2s' }}>Salir</button>
+          <span>Hola, <strong>{currentUser}</strong></span>
+          <button onClick={onLogout} style={{
+            padding: '0.5rem 1rem', cursor: 'pointer', backgroundColor: 'rgba(255,255,255,0.1)',
+            color: 'white', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px'
+          }}>Salir</button>
         </div>
       </header>
 
-      <main className={`dashboard-main-container ${showMobileCalendar ? 'show-calendar' : 'show-tasks'}`} style={{ display: 'flex', gap: '24px', padding: '24px', flex: 1, minHeight: 0, boxSizing: 'border-box', maxWidth: '1600px', margin: '0 auto', width: '100%' }}>
+      <main style={{ display: 'flex', gap: '24px', padding: '24px', flex: 1, overflow: 'hidden', maxWidth: '1600px', margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
 
-        <aside className="dashboard-sidebar-container" style={{ width: '340px', backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column', border: '1px solid #eae8e0' }}>
-
-          <button className="mobile-toggle-btn" onClick={() => setShowMobileCalendar(true)}>
-            Ver Calendario
-          </button>
-
-          <h2 style={{ color: '#2c3e50', fontSize: '1.2rem', margin: '0 0 20px 0', fontWeight: '700' }}>Mis Tareas</h2>
+        {/* Sidebar: Formulario y Lista */}
+        <aside style={{
+          width: '340px', backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '24px',
+          display: 'flex', flexDirection: 'column', border: '1px solid #eae8e0', overflow: 'hidden'
+        }}>
+          <h2 style={{ color: '#2c3e50', fontSize: '1.2rem', marginBottom: '20px' }}>Mis Tareas</h2>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
-            <input type="text" placeholder="¿Qué necesitas hacer?" value={title} onChange={(e) => setTitle(e.target.value)} style={{ backgroundColor: '#f9f8f5', border: '1px solid #e0dfd8', borderRadius: '10px', padding: '12px 16px', outline: 'none', fontSize: '0.95rem', color: '#2c3e50', transition: 'border 0.2s' }} />
-            <input type="datetime-local" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ backgroundColor: '#f9f8f5', border: '1px solid #e0dfd8', borderRadius: '10px', padding: '12px 16px', outline: 'none', fontSize: '0.95rem', color: '#555' }} />
-
-            <select value={frecuencia} onChange={(e) => setFrecuencia(e.target.value)} style={{ backgroundColor: '#f9f8f5', border: '1px solid #e0dfd8', borderRadius: '10px', padding: '12px 16px', outline: 'none', fontSize: '0.95rem', color: '#555', cursor: 'pointer' }}>
-                <option value="NUNCA">No repetir (Una sola vez)</option>
-                <option value="DIARIA">Repetir diariamente</option>
-                <option value="SEMANAL">Repetir semanalmente</option>
-                <option value="MENSUAL">Repetir mensualmente</option>
+            <input
+              type="text" placeholder="¿Qué hay que hacer?"
+              value={taskForm.title}
+              onChange={(e) => setTaskForm({...taskForm, title: e.target.value})}
+              style={{ padding: '12px', borderRadius: '10px', border: '1px solid #e0dfd8' }}
+            />
+            <input
+              type="datetime-local"
+              value={taskForm.startDate}
+              onChange={(e) => setTaskForm({...taskForm, startDate: e.target.value})}
+              style={{ padding: '12px', borderRadius: '10px', border: '1px solid #e0dfd8' }}
+            />
+            <select
+              value={taskForm.frecuencia}
+              onChange={(e) => setTaskForm({...taskForm, frecuencia: e.target.value})}
+              style={{ padding: '12px', borderRadius: '10px', border: '1px solid #e0dfd8' }}
+            >
+              <option value="NUNCA">No repetir</option>
+              <option value="DIARIA">Diaria</option>
+              <option value="SEMANAL">Semanal</option>
+              <option value="MENSUAL">Mensual</option>
             </select>
-
-            <button onClick={handleAddTask} style={{ backgroundColor: '#5d7147', color: 'white', border: 'none', borderRadius: '10px', padding: '14px', fontWeight: '600', cursor: 'pointer', marginTop: '4px', fontSize: '0.95rem', boxShadow: '0 4px 10px rgba(93, 113, 71, 0.25)', transition: 'transform 0.1s' }}>+ AÑADIR TAREA</button>
+            <button onClick={handleAddTask} style={{
+              backgroundColor: '#5d7147', color: 'white', padding: '14px',
+              borderRadius: '10px', border: 'none', fontWeight: 'bold', cursor: 'pointer'
+            }}>+ AÑADIR TAREA</button>
           </div>
 
-          <div style={{ flex: 1, overflowY: 'auto', paddingRight: '4px' }}>
-            {tasks.length === 0 ? <p style={{color: '#999', textAlign: 'center', marginTop: '40px', fontSize: '0.9rem'}}>No hay tareas pendientes</p> :
-              tasks.map(task => (
-                <div key={task.id} style={{ padding: '16px', marginBottom: '8px', backgroundColor: task.completed ? '#f9f8f5' : '#FFFFFF', border: '1px solid #e0dfd8', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div onClick={() => setSelectedTask(task)} style={{ cursor: 'pointer', flex: 1, overflow: 'hidden' }}>
-                    <span style={{ fontWeight: '600', fontSize: '0.95rem', textDecoration: task.completed ? 'line-through' : 'none', color: task.completed ? '#a0a09e' : '#2c3e50', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{task.title}</span>
-                    <small style={{ color: '#7a7a7a', fontSize: '0.8rem', marginTop: '4px', display: 'inline-block' }}>
-                      {task.startDate ? new Date(task.startDate).toLocaleDateString([], {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'}) : 'Sin fecha'}
-                      {task.frecuencia !== 'NUNCA' && <span style={{color: '#5d7147', marginLeft: '5px', fontWeight: 'bold'}}> ↻ {task.frecuencia}</span>}
-                    </small>
-                  </div>
-                  <button onClick={() => handleDeleteTask(task.id)} style={{ background: 'transparent', border: 'none', color: '#d9534f', cursor: 'pointer', width: '28px', height: '28px', borderRadius: '6px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '1.2rem', flexShrink: 0 }}>×</button>
-                </div>
-              ))
-            }
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            {tasks.map(task => (
+              <TaskItem key={task.id} task={task} onSelect={setSelectedTask} onDelete={handleDeleteTask} />
+            ))}
           </div>
         </aside>
 
-        <section className="calendar-section" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-
-          <button className="mobile-toggle-btn" onClick={() => setShowMobileCalendar(false)}>
-            ← Volver a Mis Tareas
-          </button>
-
+        {/* Calendario */}
+        <section style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           {viewMode === 'month' ? (
-            <div style={{ flex: 1, backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column', overflow: 'hidden', border: '1px solid #eae8e0' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexShrink: 0 }}>
-                <h2 style={{ color: '#2c3e50', margin: 0, fontSize: '1.4rem', fontWeight: '700' }}>{monthNames[currentMonth]} {currentYear}</h2>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button onClick={prevMonth} style={{ cursor: 'pointer', padding: '8px 16px', backgroundColor: '#f4f3ec', color: '#2c3e50', border: '1px solid #e0dfd8', borderRadius: '8px', fontWeight: '600', fontSize: '0.9rem' }}>&lt; Anterior</button>
-                  <button onClick={nextMonth} style={{ cursor: 'pointer', padding: '8px 16px', backgroundColor: '#f4f3ec', color: '#2c3e50', border: '1px solid #e0dfd8', borderRadius: '8px', fontWeight: '600', fontSize: '0.9rem' }}>Siguiente &gt;</button>
-                </div>
-              </div>
-
-              <div className="calendar-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', backgroundColor: '#e0dfd8', gap: '1px', flex: 1, overflowY: 'auto', borderRadius: '12px', border: '1px solid #e0dfd8' }}>
-                {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(day => (
-                  <div key={day} style={{ padding: '12px', fontWeight: '600', fontSize: '0.85rem', color: '#555', textAlign: 'center', backgroundColor: '#f9f8f5', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{day}</div>
-                ))}
-
-                {Array.from({ length: totalCells }).map((_, i) => {
-                  const dayNum = i - startingDay + 1;
-                  const isCurrentMonth = dayNum > 0 && dayNum <= daysInMonth;
-                  const tasksOnDay = isCurrentMonth ? getTasksByDateString(dayNum) : [];
-
-                  return (
-                    <div
-                      key={i}
-                      onClick={() => isCurrentMonth && handleDayClick(dayNum)}
-                      style={{ minHeight: '110px', padding: '8px', backgroundColor: isCurrentMonth ? '#FFFFFF' : '#f9f8f5', cursor: isCurrentMonth ? 'pointer' : 'default', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
-                    >
-                      <div style={{ textAlign: 'right', color: isCurrentMonth ? '#2c3e50' : 'transparent', marginBottom: '8px', fontSize: '0.9rem', fontWeight: '600', paddingRight: '4px' }}>
-                        {isCurrentMonth ? dayNum : "."}
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', overflow: 'hidden' }}>
-                        {tasksOnDay.map(t => (
-                          <div key={t.id} onClick={(e) => { e.stopPropagation(); setSelectedTask(t); }} style={{
-                            fontSize: '0.75rem', fontWeight: '500', backgroundColor: t.completed ? '#f0f0f0' : '#eef3e6', padding: '6px 8px', borderRadius: '6px', color: t.completed ? '#999' : '#2c3e50', textDecoration: t.completed ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', borderLeft: `3px solid ${t.completed ? '#ccc' : '#5d7147'}`, maxWidth: '100%', boxSizing: 'border-box'
-                          }}>
-                            {t.title} {t.frecuencia !== 'NUNCA' ? '↻' : ''}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            <CalendarGrid
+              currentDate={currentDate}
+              setCurrentDate={setCurrentDate}
+              monthNames={monthNames}
+              getTasksByDateString={getTasksByDateString}
+              onDayClick={(d) => { setSelectedDateView(new Date(currentYear, currentMonth, d)); setViewMode('day'); }}
+              onTaskClick={setSelectedTask}
+            />
           ) : (
-            selectedDateView && (
-              <DailyView date={selectedDateView} tasks={getTasksByDateString(selectedDateView.getDate())} onBack={() => setViewMode('month')} onTaskClick={setSelectedTask} />
-            )
+            <DailyView
+              date={selectedDateView}
+              tasks={getTasksByDateString(selectedDateView.getDate())}
+              onBack={() => setViewMode('month')}
+              onTaskClick={setSelectedTask}
+            />
           )}
         </section>
       </main>
 
       <Footer />
-
       <TaskDetailsModal task={selectedTask} onClose={() => setSelectedTask(null)} onSave={handleSaveTaskDetails} />
+    </div>
+  );
+};
+
+// --- Sub-componentes para mayor orden ---
+
+const TaskItem = ({ task, onSelect, onDelete }) => (
+  <div style={{
+    padding: '16px', marginBottom: '8px', backgroundColor: task.completed ? '#f9f8f5' : '#FFFFFF',
+    border: '1px solid #e0dfd8', borderRadius: '12px', display: 'flex', justifyContent: 'space-between'
+  }}>
+    <div onClick={() => onSelect(task)} style={{ cursor: 'pointer', flex: 1 }}>
+      <span style={{ fontWeight: '600', textDecoration: task.completed ? 'line-through' : 'none' }}>{task.title}</span>
+      <div style={{ fontSize: '0.8rem', color: '#7a7a7a' }}>
+        {new Date(task.startDate).toLocaleDateString()} {task.frecuencia !== 'NUNCA' && `↻ ${task.frecuencia}`}
+      </div>
+    </div>
+    <button onClick={() => onDelete(task.id)} style={{ color: '#d9534f', background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }}>×</button>
+  </div>
+);
+
+const CalendarGrid = ({ currentDate, setCurrentDate, monthNames, getTasksByDateString, onDayClick, onTaskClick }) => {
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const startingDay = (new Date(year, month, 1).getDay() + 6) % 7;
+  const totalCells = Math.ceil((daysInMonth + startingDay) / 7) * 7;
+
+  return (
+    <div style={{ flex: 1, backgroundColor: 'white', borderRadius: '16px', padding: '24px', display: 'flex', flexDirection: 'column', border: '1px solid #eae8e0' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+        <h2 style={{ fontWeight: '700' }}>{monthNames[month]} {year}</h2>
+        <div>
+          <button onClick={() => setCurrentDate(new Date(year, month - 1, 1))} style={{ marginRight: '8px' }}>Ant.</button>
+          <button onClick={() => setCurrentDate(new Date(year, month + 1, 1))}>Sig.</button>
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '1px', backgroundColor: '#e0dfd8', flex: 1, borderRadius: '12px', overflow: 'hidden' }}>
+        {Array.from({ length: totalCells }).map((_, i) => {
+          const day = i - startingDay + 1;
+          const isCurrent = day > 0 && day <= daysInMonth;
+          const dayTasks = isCurrent ? getTasksByDateString(day) : [];
+          return (
+            <div key={i} onClick={() => isCurrent && onDayClick(day)} style={{ backgroundColor: isCurrent ? 'white' : '#f9f8f5', padding: '8px', minHeight: '80px' }}>
+              <div style={{ textAlign: 'right', fontWeight: 'bold', fontSize: '0.8rem' }}>{isCurrent ? day : ''}</div>
+              {dayTasks.map(t => (
+                <div key={t.id} onClick={(e) => { e.stopPropagation(); onTaskClick(t); }} style={{ fontSize: '0.7rem', backgroundColor: '#eef3e6', marginBottom: '2px', padding: '2px 4px', borderRadius: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {t.title}
+                </div>
+              ))}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };
