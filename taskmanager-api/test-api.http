@@ -1,0 +1,8 @@
+### Registrar un nuevo usuario
+POST http://localhost:8080/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "luffy_dev",
+  "password": "supersecretpassword123"
+}
