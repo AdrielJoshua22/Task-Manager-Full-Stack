@@ -14,7 +14,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tasks")
-@CrossOrigin(origins = "*")
+// Se eliminó @CrossOrigin porque ya tienes CorsConfig.java global
 public class TaskController {
 
     private final TaskService taskService;
@@ -24,7 +24,6 @@ public class TaskController {
         this.taskService = taskService;
         this.userService = userService;
     }
-
 
     @GetMapping("/user/{username}")
     public List<Task> getTasksByUser(@PathVariable String username) {
@@ -57,10 +56,17 @@ public class TaskController {
     @PatchMapping("/user/{username}/fcm-token")
     public ResponseEntity<Void> updateFcmToken(@PathVariable String username, @RequestBody Map<String, String> body) {
         String token = body.get("token");
-        if (token == null || token.isBlank()) {
+
+        if (token == null || token.trim().isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
-        userService.updateFcmToken(username, token);
-        return ResponseEntity.ok().build();
+
+        try {
+            userService.updateFcmToken(username, token);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            // Esto ayuda si el usuario no existe (lanza 404 en lugar de 500)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 }
