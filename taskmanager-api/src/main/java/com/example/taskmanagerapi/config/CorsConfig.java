@@ -19,7 +19,7 @@ public class CorsConfig {
         config.setAllowedOriginPatterns(Collections.singletonList("*"));
         config.setAllowedHeaders(Collections.singletonList("*"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        config.setAllowCredentials(true);
+        config.setAllowCredentials(false);
 
         config.setMaxAge(3600L);
 

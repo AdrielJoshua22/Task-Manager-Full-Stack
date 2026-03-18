@@ -27,8 +27,7 @@ public class FirebaseConfig {
                 serviceAccount = new ByteArrayInputStream(firebaseJson.getBytes(StandardCharsets.UTF_8));
                 System.out.println("Firebase inicializado desde Railway (Variable de Entorno)");
             } else {
-                serviceAccount = getClass().getClassLoader().getResourceAsStream("firebase-service-account.json");
-
+                serviceAccount = getClass().getResourceAsStream("/firebase-service-account.json");
                 if (serviceAccount == null) {
                     System.err.println("ERROR: No se encontró la configuración de Firebase.");
                     return;
