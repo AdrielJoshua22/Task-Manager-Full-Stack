@@ -1,13 +1,11 @@
 package com.example.taskmanagerapi.controller;
 
 import com.example.taskmanagerapi.domain.Task;
-import com.example.taskmanagerapi.repository.TaskRepository;
-import com.example.taskmanagerapi.repository.UserRepository;
+import com.example.taskmanagerapi.service.TaskService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -16,65 +14,37 @@ import java.util.List;
 @RequestMapping("/api/tasks")
 public class TaskController {
 
-    private final TaskRepository taskRepository;
-    private final UserRepository userRepository;
+    private final TaskService taskService;
 
-    public TaskController(TaskRepository taskRepository, UserRepository userRepository) {
-        this.taskRepository = taskRepository;
-        this.userRepository = userRepository;
+    public TaskController(TaskService taskService) {
+        this.taskService = taskService;
     }
 
     @GetMapping("/user/{username}")
     public List<Task> getTasksByUser(@PathVariable String username) {
-        return userRepository.findByUsername(username)
-                .map(user -> taskRepository.findByUserId(user.getId()))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+        return taskService.getTasksByUsername(username);
     }
 
     @GetMapping("/user/{username}/date/{date}")
     public List<Task> getTasksByUserAndDate(
             @PathVariable String username,
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-
-        return userRepository.findByUsername(username)
-                .map(user -> taskRepository.findTasksByDateAndFrequency(user.getId(), date))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+        return taskService.getTasksByDate(username, date);
     }
 
     @PostMapping("/{username}")
     public ResponseEntity<Task> createTask(@PathVariable String username, @RequestBody Task task) {
-        return userRepository.findByUsername(username)
-                .map(user -> {
-                    task.setUser(user);
-                    if (task.getFrecuencia() == null || task.getFrecuencia().isBlank()) {
-                        task.setFrecuencia("NUNCA");
-                    }
-                    return ResponseEntity.status(HttpStatus.CREATED).body(taskRepository.save(task));
-                })
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Usuario inexistente"));
+        return ResponseEntity.status(HttpStatus.CREATED).body(taskService.createTask(username, task));
     }
 
     @PutMapping("/{id}")
     public Task updateTask(@PathVariable Long id, @RequestBody Task details) {
-        return taskRepository.findById(id)
-                .map(task -> {
-                    task.setTitle(details.getTitle());
-                    task.setDescription(details.getDescription());
-                    task.setCompleted(details.isCompleted());
-                    task.setStartDate(details.getStartDate());
-                    task.setEndDate(details.getEndDate());
-                    task.setFrecuencia(details.getFrecuencia());
-                    return taskRepository.save(task);
-                })
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tarea no encontrada"));
+        return taskService.updateTask(id, details);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
-        if (!taskRepository.existsById(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Tarea no existe");
-        }
-        taskRepository.deleteById(id);
+        taskService.deleteTask(id);
         return ResponseEntity.noContent().build();
     }
 }

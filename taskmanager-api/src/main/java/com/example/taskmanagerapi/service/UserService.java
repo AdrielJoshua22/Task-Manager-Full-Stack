@@ -3,6 +3,7 @@ package com.example.taskmanagerapi.service;
 import com.example.taskmanagerapi.domain.User;
 import com.example.taskmanagerapi.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -15,9 +16,9 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
+    @Transactional
     public User registerUser(String username, String rawPassword) {
-        Optional<User> existingUser = userRepository.findByUsername(username);
-        if (existingUser.isPresent()) {
+        if (userRepository.findByUsername(username).isPresent()) {
             throw new RuntimeException("Error: El nombre de usuario ya está en uso.");
         }
 
@@ -27,13 +28,22 @@ public class UserService {
 
         return userRepository.save(newUser);
     }
+
+    @Transactional(readOnly = true)
     public User loginUser(String username, String rawPassword) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
         if (!user.getPassword().equals(rawPassword)) {
             throw new RuntimeException("Contraseña incorrecta");
         }
 
         return user;
+    }
+
+    @Transactional(readOnly = true)
+    public User findByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + username));
     }
 }
