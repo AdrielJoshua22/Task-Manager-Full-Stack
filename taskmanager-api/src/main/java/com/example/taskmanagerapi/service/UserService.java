@@ -5,8 +5,6 @@ import com.example.taskmanagerapi.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
-
 @Service
 public class UserService {
 
@@ -17,22 +15,32 @@ public class UserService {
     }
 
     @Transactional
-    public User registerUser(String username, String rawPassword) {
-        if (userRepository.findByUsername(username).isPresent()) {
+    public User registerUser(String username, String rawPassword, String email) {
+        if (userRepository.existsByUsername(username)) {
             throw new RuntimeException("Error: El nombre de usuario ya está en uso.");
+        }
+        if (userRepository.existsByEmail(email)) {
+            throw new RuntimeException("Error: El email ya está en uso.");
         }
 
         User newUser = new User();
         newUser.setUsername(username);
         newUser.setPassword(rawPassword);
+        newUser.setEmail(email);
 
         return userRepository.save(newUser);
     }
 
+    @Transactional
+    public void updateFcmToken(String username, String token) {
+        User user = findByUsername(username);
+        user.setFcmToken(token);
+        userRepository.save(user);
+    }
+
     @Transactional(readOnly = true)
     public User loginUser(String username, String rawPassword) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        User user = findByUsername(username);
 
         if (!user.getPassword().equals(rawPassword)) {
             throw new RuntimeException("Contraseña incorrecta");

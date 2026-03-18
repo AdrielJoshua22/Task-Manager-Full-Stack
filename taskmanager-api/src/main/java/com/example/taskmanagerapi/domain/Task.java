@@ -1,5 +1,6 @@
 package com.example.taskmanagerapi.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -26,7 +27,7 @@ public class Task {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    @com.fasterxml.jackson.annotation.JsonIgnoreProperties("tasks")
+    @JsonIgnoreProperties({"tasks", "password", "fcmToken"})
     private User user;
 
     private String frecuencia;
