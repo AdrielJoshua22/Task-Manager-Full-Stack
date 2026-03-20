@@ -3,7 +3,7 @@ import axios from 'axios';
 import TaskDetailsModal from './TaskDetailsModal';
 import DailyView from './DailyView';
 import Footer from './Footer';
-import { solicitarPermisosYGuardarToken } from '../services/notifications';
+import { solicitarPermisosYGuardarToken } from '../services/notificationService';
 
 const api = axios.create({
   baseURL: 'https://task-manager-full-stack-production.up.railway.app/api/tasks'
