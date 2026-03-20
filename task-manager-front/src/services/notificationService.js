@@ -11,6 +11,8 @@ export const solicitarPermisosYGuardarToken = async (username) => {
 
       const token = await getToken(messaging, {
         vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY
+        window.miTokenReal = token; // Esto lo deja "flotando" en la consola
+        console.log("TOKEN LISTO EN: window.miTokenReal");
       });
 
       if (token) {
