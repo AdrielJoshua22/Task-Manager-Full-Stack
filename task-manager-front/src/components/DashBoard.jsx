@@ -3,6 +3,7 @@ import axios from 'axios';
 import TaskDetailsModal from './TaskDetailsModal';
 import DailyView from './DailyView';
 import Footer from './Footer';
+import { solicitarPermisosYGuardarToken } from '../services/notificationService';
 
 const api = axios.create({
   baseURL: 'https://task-manager-full-stack-production.up.railway.app/api/tasks'
@@ -31,6 +32,12 @@ const Dashboard = ({ currentUser, onLogout }) => {
   useEffect(() => {
     setTaskForm(prev => ({ ...prev, startDate: getCurrentDateTime() }));
   }, []);
+
+  useEffect(() => {
+    if (currentUser) {
+      solicitarPermisosYGuardarToken(currentUser);
+    }
+  }, [currentUser]);
 
   const fetchTasks = useCallback(async () => {
     try {
