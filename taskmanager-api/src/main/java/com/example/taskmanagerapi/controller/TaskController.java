@@ -14,7 +14,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tasks")
-// Se eliminó @CrossOrigin porque ya tienes CorsConfig.java global
+@CrossOrigin(origins = "*")
 public class TaskController {
 
     private final TaskService taskService;
@@ -26,15 +26,15 @@ public class TaskController {
     }
 
     @GetMapping("/user/{username}")
-    public List<Task> getTasksByUser(@PathVariable String username) {
-        return taskService.getTasksByUsername(username);
+    public ResponseEntity<List<Task>> getTasksByUser(@PathVariable String username) {
+        return ResponseEntity.ok(taskService.getTasksByUsername(username));
     }
 
     @GetMapping("/user/{username}/date/{date}")
-    public List<Task> getTasksByUserAndDate(
+    public ResponseEntity<List<Task>> getTasksByUserAndDate(
             @PathVariable String username,
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        return taskService.getTasksByDate(username, date);
+        return ResponseEntity.ok(taskService.getTasksByDate(username, date));
     }
 
     @PostMapping("/{username}")
@@ -43,8 +43,8 @@ public class TaskController {
     }
 
     @PutMapping("/{id}")
-    public Task updateTask(@PathVariable Long id, @RequestBody Task details) {
-        return taskService.updateTask(id, details);
+    public ResponseEntity<Task> updateTask(@PathVariable Long id, @RequestBody Task details) {
+        return ResponseEntity.ok(taskService.updateTask(id, details));
     }
 
     @DeleteMapping("/{id}")
@@ -57,7 +57,7 @@ public class TaskController {
     public ResponseEntity<Void> updateFcmToken(@PathVariable String username, @RequestBody Map<String, String> body) {
         String token = body.get("token");
 
-        if (token == null || token.trim().isEmpty()) {
+        if (token == null || token.isBlank()) {
             return ResponseEntity.badRequest().build();
         }
 
@@ -65,8 +65,7 @@ public class TaskController {
             userService.updateFcmToken(username, token);
             return ResponseEntity.ok().build();
         } catch (RuntimeException e) {
-            // Esto ayuda si el usuario no existe (lanza 404 en lugar de 500)
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            return ResponseEntity.notFound().build();
         }
     }
 }

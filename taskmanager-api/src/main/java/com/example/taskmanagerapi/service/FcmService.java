@@ -10,7 +10,6 @@ public class FcmService {
 
     public void sendPushNotification(String token, String title, String body) {
         if (token == null || token.isBlank()) {
-            System.err.println("No se puede enviar notificación: El usuario no tiene un FCM Token registrado.");
             return;
         }
 
@@ -23,14 +22,12 @@ public class FcmService {
             Message message = Message.builder()
                     .setToken(token)
                     .setNotification(notification)
-                    .putData("click_action", "FLUTTER_NOTIFICATION_CLICK") // Opcional: para manejar clicks
                     .build();
 
-            String response = FirebaseMessaging.getInstance().send(message);
-            System.out.println("Notificación enviada con éxito. ID de respuesta: " + response);
+            FirebaseMessaging.getInstance().send(message);
 
         } catch (Exception e) {
-            System.err.println("Error enviando notificación push a Firebase: " + e.getMessage());
+            return;
         }
     }
 }

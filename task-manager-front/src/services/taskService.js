@@ -5,24 +5,19 @@ const API_BASE_URL = isLocal
   ? 'http://localhost:8080/api'
   : 'https://task-manager-full-stack-production.up.railway.app/api';
 
-const authClient = axios.create({
+const taskClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json'
   }
 });
 
-export const login = async (username, password) => {
-  const response = await authClient.post('/auth/login', {
-    username,
-    password
-  });
+export const getTasksByUser = async (username) => {
+  const response = await taskClient.get(`/tasks/user/${username}`);
   return response.data;
 };
 
-export const updateFcmToken = async (username, token) => {
-  const response = await authClient.patch(`/tasks/user/${username}/fcm-token`, {
-    token
-  });
+export const createTask = async (username, taskData) => {
+  const response = await taskClient.post(`/tasks/${username}`, taskData);
   return response.data;
 };

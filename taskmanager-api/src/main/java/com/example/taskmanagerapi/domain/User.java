@@ -22,7 +22,7 @@ public class User {
     @Column(unique = true)
     private String email;
 
-    @Column(name = "fcm_token")
+    @Column(name = "fcm_token", length = 512)
     private String fcmToken;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
