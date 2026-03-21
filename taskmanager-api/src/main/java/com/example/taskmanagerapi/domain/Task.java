@@ -27,7 +27,7 @@ public class Task {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnoreProperties({"tasks", "password", "fcmToken"})
+    @JsonIgnoreProperties({"tasks", "password", "fcmToken", "hibernateLazyInitializer", "handler"})
     private User user;
 
     private String frecuencia;
