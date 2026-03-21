@@ -84,20 +84,22 @@
   margin-bottom: 5px;
   color: #2c3327;
 }
+ .cell-task-pill {
+   background-color: var(--accent); /
+   color: white;
+   padding: 4px 8px;
+   border-radius: 4px;
+   font-size: 0.75rem;
+   font-weight: 500;
+   display: block;
+   max-width: 100%;
+   box-sizing: border-box;
 
-.cell-task-pill {
-  background: #5d7147;
-  color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
+   white-space: nowrap;
+   overflow: hidden;
+   text-overflow: ellipsis;
 
-.cell-task-pill:hover {
-  background: #435425;
-}
+   cursor: pointer;
+   transition: background-color 0.2s ease;
+   margin-bottom: 2px;
+ }
