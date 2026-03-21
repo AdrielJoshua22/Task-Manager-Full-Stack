@@ -1,5 +1,6 @@
 package com.example.taskmanagerapi.controller;
 
+import com.example.taskmanagerapi.domain.User;
 import com.example.taskmanagerapi.repository.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,5 +34,14 @@ public class AuthController {
                     return ResponseEntity.ok(response);
                 })
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciales incorrectas"));
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody User newUser) {
+        if (userRepository.findByUsername(newUser.getUsername()).isPresent()) {
+            return ResponseEntity.badRequest().body("El usuario ya existe");
+        }
+        userRepository.save(newUser);
+        return ResponseEntity.ok("Usuario registrado con éxito");
     }
 }
