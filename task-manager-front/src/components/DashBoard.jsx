@@ -178,8 +178,6 @@ const CalendarGrid = ({ currentDate, setCurrentDate, getTasksByDate, onDayClick,
           <button onClick={() => setCurrentDate(new Date(year, month + 1, 1))}>{">"}</button>
         </div>
       </div>
-
-      {/* Cabecera de días de la semana */}
       <div className="calendar-days-header">
         {daysOfWeek.map(day => (
           <div key={day} className="day-name">{day}</div>
