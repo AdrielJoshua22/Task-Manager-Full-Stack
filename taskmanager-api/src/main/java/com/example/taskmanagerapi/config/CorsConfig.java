@@ -12,6 +12,7 @@ public class CorsConfig implements WebMvcConfigurer {
         registry.addMapping("/**")
                 .allowedOrigins(
                         "https://task-manager-full-stack-alpha.vercel.app",
+                        "https://task-manager-full-stack-mpwncggp7-adrieljoshua22s-projects.vercel.app",
                         "http://localhost:5173",
                         "http://localhost:3000"
                 )
