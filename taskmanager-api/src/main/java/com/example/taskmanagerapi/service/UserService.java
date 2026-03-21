@@ -41,11 +41,9 @@ public class UserService {
     @Transactional(readOnly = true)
     public User loginUser(String username, String rawPassword) {
         User user = findByUsername(username);
-
         if (!user.getPassword().equals(rawPassword)) {
             throw new RuntimeException("Contraseña incorrecta");
         }
-
         return user;
     }
 

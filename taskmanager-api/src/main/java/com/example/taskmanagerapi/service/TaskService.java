@@ -37,28 +37,21 @@ public class TaskService {
 
     @Transactional
     public Task createTask(String username, Task task) {
-        System.out.println("🚀 [DEBUG] Iniciando createTask para: " + username);
-
         User user = fetchUser(username);
-        System.out.println("✅ [DEBUG] Usuario verificado: ID " + user.getId() + " | Token: " + (user.getFcmToken() != null ? "PRESENTE" : "NULO"));
-
         task.setUser(user);
+
         if (task.getFrecuencia() == null || task.getFrecuencia().isBlank()) {
             task.setFrecuencia("NUNCA");
         }
 
         Task savedTask = taskRepository.save(task);
-        System.out.println("💾 [DEBUG] Tarea persistida en MySQL con ID: " + savedTask.getId());
 
         if (user.getFcmToken() != null && !user.getFcmToken().isBlank()) {
-            System.out.println("🔔 [DEBUG] Disparando notificación FCM al token...");
             fcmService.sendPushNotification(
                     user.getFcmToken(),
                     "Nueva Tarea Creada",
                     "Se agregó: " + savedTask.getTitle()
             );
-        } else {
-            System.out.println("⚠️ [DEBUG] Salteando notificación: El usuario no tiene token FCM.");
         }
 
         return savedTask;
@@ -88,18 +81,7 @@ public class TaskService {
     }
 
     private User fetchUser(String username) {
-        // 1. Verificamos exactamente qué string está llegando del Frontend
-        System.out.println("🔍 [DEBUG] Buscando a: '" + username + "' (Largo: " + (username != null ? username.length() : 0) + ")");
-
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> {
-                    // 2. Diagnóstico: Listamos qué usuarios SÍ existen en esta DB
-                    List<User> reales = userRepository.findAll();
-                    System.err.println("❌ [ERROR] El usuario '" + username + "' NO existe en esta DB.");
-                    System.err.println("📋 [INFO] Usuarios encontrados en la tabla 'users': " +
-                            reales.stream().map(User::getUsername).toList());
-
-                    return new RuntimeException("Usuario no encontrado: " + username);
-                });
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + username));
     }
 }
