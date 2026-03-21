@@ -11,9 +11,7 @@ const API_BASE_URL = isLocal
   ? 'http://localhost:8080/api/tasks'
   : 'https://task-manager-full-stack-production.up.railway.app/api/tasks';
 
-const api = axios.create({
-  baseURL: API_BASE_URL
-});
+const api = axios.create({ baseURL: API_BASE_URL });
 
 const Dashboard = ({ currentUser, onLogout }) => {
   const [tasks, setTasks] = useState([]);
@@ -21,7 +19,7 @@ const Dashboard = ({ currentUser, onLogout }) => {
   const [viewMode, setViewMode] = useState('month');
   const [selectedDateView, setSelectedDateView] = useState(null);
   const [showMobileCalendar, setShowMobileCalendar] = useState(false);
-  const [currentDate, setCurrentDate] = useState(new Date(2026, 2, 1));
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [taskForm, setTaskForm] = useState({
     title: '',
     startDate: getCurrentDateTime(),
@@ -29,9 +27,7 @@ const Dashboard = ({ currentUser, onLogout }) => {
   });
 
   useEffect(() => {
-    if (currentUser) {
-      solicitarPermisosYGuardarToken(currentUser);
-    }
+    if (currentUser) solicitarPermisosYGuardarToken(currentUser);
   }, [currentUser]);
 
   const fetchTasks = useCallback(async () => {
@@ -44,9 +40,7 @@ const Dashboard = ({ currentUser, onLogout }) => {
     }
   }, [currentUser]);
 
-  useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
+  useEffect(() => { fetchTasks(); }, [fetchTasks]);
 
   const handleAddTask = async () => {
     if (!taskForm.title.trim()) return alert("Escribe un título");
@@ -54,9 +48,7 @@ const Dashboard = ({ currentUser, onLogout }) => {
       await api.post(`/${currentUser}`, { ...taskForm, description: "", completed: false });
       setTaskForm({ title: '', startDate: getCurrentDateTime(), frecuencia: 'NUNCA' });
       fetchTasks();
-    } catch (error) {
-      console.error(error);
-    }
+    } catch (error) { console.error(error); }
   };
 
   const handleDeleteTask = async (id) => {
@@ -64,9 +56,7 @@ const Dashboard = ({ currentUser, onLogout }) => {
     try {
       await api.delete(`/${id}`);
       fetchTasks();
-    } catch (error) {
-      console.error(error);
-    }
+    } catch (error) { console.error(error); }
   };
 
   const handleSaveTaskDetails = async (updatedTask) => {
@@ -74,9 +64,7 @@ const Dashboard = ({ currentUser, onLogout }) => {
       await api.put(`/${updatedTask.id}`, updatedTask);
       setSelectedTask(null);
       fetchTasks();
-    } catch (error) {
-      console.error(error);
-    }
+    } catch (error) { console.error(error); }
   };
 
   const currentTasksByDate = useMemo(() => {
@@ -87,18 +75,25 @@ const Dashboard = ({ currentUser, onLogout }) => {
     <div className={`dashboard-wrapper ${showMobileCalendar ? 'show-calendar' : 'show-tasks'}`}>
       <DashboardHeader currentUser={currentUser} onLogout={onLogout} />
 
-      <main className="dashboard-main">
+      <main className="dashboard-layout">
         <button className="mobile-toggle-btn" onClick={() => setShowMobileCalendar(!showMobileCalendar)}>
           {showMobileCalendar ? "Ver mis tareas" : "Ver calendario"}
         </button>
 
         <aside className="sidebar-aside">
-          <h2 className="sidebar-title">Mis Tareas</h2>
-          <TaskForm taskForm={taskForm} setTaskForm={setTaskForm} onAdd={handleAddTask} />
-          <div className="task-list-container">
-            {tasks.map(task => (
-              <TaskItem key={task.id} task={task} onSelect={setSelectedTask} onDelete={handleDeleteTask} />
-            ))}
+          <div className="sidebar-card">
+            <h2 className="sidebar-title">Añadir Nueva Tarea</h2>
+            <TaskForm taskForm={taskForm} setTaskForm={setTaskForm} onAdd={handleAddTask} />
+          </div>
+
+          <div className="sidebar-card task-list-card">
+            <h2 className="sidebar-title">Mis Tareas</h2>
+            <div className="task-list-container">
+              {tasks.length === 0 ? <p className="no-tasks">No hay tareas aún.</p> : null}
+              {tasks.map(task => (
+                <TaskItem key={task.id} task={task} onSelect={setSelectedTask} onDelete={handleDeleteTask} />
+              ))}
+            </div>
           </div>
         </aside>
 
@@ -124,29 +119,25 @@ const Dashboard = ({ currentUser, onLogout }) => {
           )}
         </section>
       </main>
-
       <Footer />
-
-      {selectedTask && (
-        <TaskDetailsModal task={selectedTask} onClose={() => setSelectedTask(null)} onSave={handleSaveTaskDetails} />
-      )}
+      {selectedTask && <TaskDetailsModal task={selectedTask} onClose={() => setSelectedTask(null)} onSave={handleSaveTaskDetails} />}
     </div>
   );
 };
 
 const DashboardHeader = ({ currentUser, onLogout }) => (
-  <header className="dashboard-header">
-    <h1 className="header-logo">Task Manager</h1>
+  <header className="app-header">
+    <h1>Task Manager</h1>
     <div className="header-user-section">
-      <span className="user-greeting">Hola, <strong>{currentUser}</strong></span>
-      <button onClick={onLogout} className="logout-btn">Salir</button>
+      <span>Hola, <strong>{currentUser}</strong></span>
+      <button onClick={onLogout} className="logout-btn">Cerrar sesión</button>
     </div>
   </header>
 );
 
 const TaskForm = ({ taskForm, setTaskForm, onAdd }) => (
-  <div className="task-form-container">
-    <input type="text" placeholder="¿Qué hay?" value={taskForm.title} onChange={(e) => setTaskForm({...taskForm, title: e.target.value})} />
+  <div className="advanced-form">
+    <input type="text" placeholder="Nombre de la tarea..." value={taskForm.title} onChange={(e) => setTaskForm({...taskForm, title: e.target.value})} />
     <input type="datetime-local" value={taskForm.startDate} onChange={(e) => setTaskForm({...taskForm, startDate: e.target.value})} />
     <select value={taskForm.frecuencia} onChange={(e) => setTaskForm({...taskForm, frecuencia: e.target.value})}>
       <option value="NUNCA">No repetir</option>
@@ -154,17 +145,17 @@ const TaskForm = ({ taskForm, setTaskForm, onAdd }) => (
       <option value="SEMANAL">Semanal</option>
       <option value="MENSUAL">Mensual</option>
     </select>
-    <button onClick={onAdd} className="btn-add">+ AÑADIR</button>
+    <button onClick={onAdd} className="btn-add">Añadir Tarea</button>
   </div>
 );
 
 const TaskItem = ({ task, onSelect, onDelete }) => (
-  <div className="task-item">
-    <div onClick={() => onSelect(task)} className="task-item-content">
-      <div className={`task-item-title ${task.completed ? 'completed' : ''}`}>{task.title}</div>
-      <div className="task-item-date">{new Date(task.startDate).toLocaleDateString()}</div>
+  <div className="task-card">
+    <div onClick={() => onSelect(task)} className="task-info">
+      <input type="checkbox" checked={task.completed} readOnly />
+      <span className={`task-text ${task.completed ? 'completed' : ''}`}>{task.title}</span>
     </div>
-    <button onClick={() => onDelete(task.id)} className="task-item-delete">×</button>
+    <button onClick={() => onDelete(task.id)} className="bin-btn">🗑️</button>
   </div>
 );
 
@@ -172,19 +163,29 @@ const CalendarGrid = ({ currentDate, setCurrentDate, getTasksByDate, onDayClick,
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
   const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+  const daysOfWeek = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const startingDay = (new Date(year, month, 1).getDay() + 6) % 7;
+  const startingDay = new Date(year, month, 1).getDay();
   const totalCells = Math.ceil((daysInMonth + startingDay) / 7) * 7;
 
   return (
     <div className="calendar-grid-container">
       <div className="calendar-nav">
-        <h3>{monthNames[month]} {year}</h3>
+        <h2>Calendario - {monthNames[month]} {year}</h2>
         <div className="nav-buttons">
           <button onClick={() => setCurrentDate(new Date(year, month - 1, 1))}>{"<"}</button>
           <button onClick={() => setCurrentDate(new Date(year, month + 1, 1))}>{">"}</button>
         </div>
       </div>
+
+      {/* Cabecera de días de la semana */}
+      <div className="calendar-days-header">
+        {daysOfWeek.map(day => (
+          <div key={day} className="day-name">{day}</div>
+        ))}
+      </div>
+
       <div className="calendar-grid">
         {Array.from({ length: totalCells }).map((_, i) => {
           const day = i - startingDay + 1;
@@ -193,9 +194,13 @@ const CalendarGrid = ({ currentDate, setCurrentDate, getTasksByDate, onDayClick,
           return (
             <div key={i} onClick={() => isCurrent && onDayClick(day)} className={`calendar-cell ${!isCurrent ? 'inactive' : ''}`}>
               <div className="cell-number">{isCurrent ? day : ''}</div>
-              {dayTasks.slice(0, 3).map(t => (
-                <div key={t.id} onClick={(e) => { e.stopPropagation(); onTaskClick(t); }} className="cell-task-pill">{t.title}</div>
-              ))}
+              <div className="cell-tasks-wrapper">
+                {dayTasks.slice(0, 3).map(t => (
+                  <div key={t.id} onClick={(e) => { e.stopPropagation(); onTaskClick(t); }} className="cell-task-pill">
+                    {t.title}
+                  </div>
+                ))}
+              </div>
             </div>
           );
         })}
