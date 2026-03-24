@@ -22,7 +22,7 @@ public class TaskReminderScheduler {
     @Autowired
     private UserRepository userRepository;
 
-    @Scheduled(cron = "0 25 19 * * *", zone = "America/Argentina/Buenos_Aires")
+    @Scheduled(cron = "0 42 19 * * *", zone = "America/Argentina/Buenos_Aires")
     public void sendMorningReminders() {
         Long userId = 1L;
         LocalDate hoy = LocalDate.now();
