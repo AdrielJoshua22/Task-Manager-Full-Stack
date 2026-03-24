@@ -2,37 +2,45 @@ package com.example.taskmanagerapi.service;
 
 import com.example.taskmanagerapi.domain.Task;
 import com.example.taskmanagerapi.repository.TaskRepository;
+import com.example.taskmanagerapi.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
 import java.time.LocalDate;
 import java.util.List;
 
 @Component
 public class TaskReminderScheduler {
 
-    private final TaskRepository taskRepository;
-    private final FcmService fcmService;
+    @Autowired
+    private TaskRepository taskRepository;
 
-    public TaskReminderScheduler(TaskRepository taskRepository, FcmService fcmService) {
-        this.taskRepository = taskRepository;
-        this.fcmService = fcmService;
-    }
-    @Scheduled(cron = "0 0 9 * * *")
-    public void checkDailyTasksAndNotify() {
+    @Autowired
+    private FcmService fcmService;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Scheduled(cron = "0 25 19 * * *", zone = "America/Argentina/Buenos_Aires")
+    public void sendMorningReminders() {
+        Long userId = 1L;
         LocalDate hoy = LocalDate.now();
-        List<Task> tareasDeHoy = taskRepository.findTasksByDateAndFrequency(null, hoy);
 
-        for (Task task : tareasDeHoy) {
-            if (task.getUser() != null && task.getUser().getFcmToken() != null) {
-                String title = "📌 Recordatorio de Tarea";
-                String body = "No te olvides de: " + task.getTitle();
+        List<Task> tasks = taskRepository.findTasksByDateAndFrequency(userId, hoy);
 
-                fcmService.sendPushNotification(
-                        task.getUser().getFcmToken(),
-                        title,
-                        body
-                );
+        if (!tasks.isEmpty()) {
+            StringBuilder body = new StringBuilder("Hoy tenés: ");
+            for (int i = 0; i < tasks.size(); i++) {
+                body.append(tasks.get(i).getTitle());
+                if (i < tasks.size() - 1) body.append(", ");
             }
+
+            userRepository.findById(userId).ifPresent(user -> {
+                if (user.getFcmToken() != null && !user.getFcmToken().isBlank()) {
+                    fcmService.sendPushNotification(user.getFcmToken(), "📅 Agenda del día", body.toString());
+                }
+            });
         }
     }
 }
