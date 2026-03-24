@@ -22,25 +22,12 @@ public class TaskReminderScheduler {
     @Autowired
     private UserRepository userRepository;
 
-    @Scheduled(cron = "0 42 19 * * *", zone = "America/Argentina/Buenos_Aires")
+    @Scheduled(cron = "0 50 19 * * *", zone = "America/Argentina/Buenos_Aires")
     public void sendMorningReminders() {
         Long userId = 1L;
-        LocalDate hoy = LocalDate.now();
+        String testToken = "cdWXa7guY3wrHiOm9JljSy:APA91bEH6exOg1zwqXN-2Phr28nLG5eA1mRGNjP-vKJLO6jFp5oCHEswVisW_tZpLLu8EGqFyXiIFnQZtyhuFLdiUGoQ5M1r99ieRFCiEdsqn-lW4D5e5T4";
 
-        List<Task> tasks = taskRepository.findTasksByDateAndFrequency(userId, hoy);
-
-        if (!tasks.isEmpty()) {
-            StringBuilder body = new StringBuilder("Hoy tenés: ");
-            for (int i = 0; i < tasks.size(); i++) {
-                body.append(tasks.get(i).getTitle());
-                if (i < tasks.size() - 1) body.append(", ");
-            }
-
-            userRepository.findById(userId).ifPresent(user -> {
-                if (user.getFcmToken() != null && !user.getFcmToken().isBlank()) {
-                    fcmService.sendPushNotification(user.getFcmToken(), "📅 Agenda del día", body.toString());
-                }
-            });
-        }
+        System.out.println("--- DISPARANDO PRUEBA MANUAL A LAS 19:50 ---");
+        fcmService.sendPushNotification(testToken, "🚀 Prueba de Sistema", "Si ves esto, el puente Firebase-Mac funciona!");
     }
 }
